@@ -20,8 +20,7 @@ subroutine diffusive_CNT(j,ntim,repeatInterval)
     integer :: i, n,kk!,repeat_interval
 
     real :: hi, gi, ki, pj, qj, rj, pj_p, qj_p, rj_p, sj_p, mi, ni, qp_ghost, r_interpol_time, qp_ghost_1
-
-
+    real :: alpha_1, alpha_2, t_prime_1, t_prime_2
 !!++++++++++++++++++++ Diffusive wave Forward sweep starts +++++++++++++++++++!!
 
     ncomp = nx1(j)
@@ -29,6 +28,8 @@ subroutine diffusive_CNT(j,ntim,repeatInterval)
     allocate(E_cnt(ncomp,ntim))
     allocate(F_cnt(ncomp,ntim))
 
+    ! qp_ghost_1 is the estimated q value at the i = i-1 and n = ntim + 1
+    ! at the first node of a reach, this is taken as equal to the same as the q of previous timestep and same location
     qp_ghost_1 = qp(1,ntim,j)
 
     E_cnt(1:ncomp,1) = ini_E(1:ncomp,j)
@@ -52,46 +53,82 @@ subroutine diffusive_CNT(j,ntim,repeatInterval)
             mi = diffusivity(i-1,j) / (celerity(i-1,j)**2.0) * dx(i-1,j) / dtini
             ni = dx(i-1,j)
 
-            pj = - hi / 4.0 - gi / 2.0 - 2.0 * ki
-            qj = 1.0 + gi + 4.0 * ki
-            rj = hi / 4.0 - gi / 2.0 - 2.0 * ki
-
-            pj_p = hi / 4.0 + gi / 2.0 - 2.0 * ki
-            qj_p = 1.0 - gi + 4.0 * ki
-            rj_p = -hi / 4.0 + gi / 2.0 - 2.0 * ki
-
-            sj_p = pj_p * qp(i-1,n-1,j) + qj_p * qp(i-1,n,j) + rj_p * qp(i-1,n+1,j) &
-                + mi / 2.0 * (lateralFlow(i-1,n+1,j) - lateralFlow(i-1,n-1,j) ) &
-                + ni * lateralFlow(i-1,n,j)
-
-            !if (j .eq. 3) then
-            !    print*, i-1, n-1, j, qp(i-1,n-1,j), qp(i-1,n,j), qp(i-1,n+1,j)!; pause 6000
-            !end if
-
             if (n .eq. ntim) then
-                ! applying ghost node !&
+                ! applying ghost node !
+                if (i .eq. 2) then
+                    t_prime_1 = dx(i-1,j) / celerity(i-1,j)
+                else
+                    t_prime_1 = dx(i-2,j) / celerity(i-1,j)
+                end if
+
+                t_prime_2 = dx(i-1,j) / celerity(i-1,j)
+                alpha_1 = t_prime_1 / dtini
+                alpha_2 = t_prime_2 / dtini
+
+
+                !print*, j, i, alpha_1, alpha_2
+
+
+                !!! set 1 equation !!!
+                pj = - 1.0/(2.0 * (1.0 + alpha_2)) * hi - gi / 2.0 - 2.0 * ki
+                qj = 1.0 + (alpha_2 + 1.0)/(2.0 * alpha_2) * gi + (2.0*(alpha_2+1.0)/alpha_2) * ki
+                rj = 1.0/(2.0*(alpha_2 + 1.0)) * hi - gi / (2.0 * alpha_2) - 2.0 / alpha_2 * ki
+
+                pj_p = 1.0/(2.0 * (1.0 + alpha_1)) * hi + gi / 2.0 - 2.0 * ki
+                qj_p = 1.0 - (alpha_1 + 1.0)/(2.0 * alpha_1) * gi + (2.0*(alpha_1+1.0)/alpha_1) * ki
+                rj_p = - 1.0/(2.0*(alpha_1 + 1.0)) * hi + gi / (2.0 * alpha_1) - 2.0 / alpha_1 * ki
+
+                !!! set 1 equation (with possible correction) !!!
+                !pj = - 1.0/(2.0 * (1.0 + alpha_2)) * hi - gi / 2.0 /alpha_2 - 2.0 * ki / alpha_2
+                !qj = 1.0 + (alpha_2 + 1.0)/(2.0 * alpha_2 * alpha_2) * gi + 2.0*(alpha_2+1.0)/(alpha_2*alpha_2) * ki
+                !rj = 1.0/(2.0*(alpha_2 + 1.0)) * hi - gi / (2.0 * alpha_2*alpha_2) - 2.0 / (alpha_2*alpha_2) * ki
+
+                !pj_p = 1.0/(2.0 * (1.0 + alpha_1)) * hi + gi / 2.0 / alpha_1 - 2.0 * ki / alpha_1
+                !qj_p = 1.0 - (alpha_1 + 1.0)/(2.0 * alpha_1 * alpha_1) * gi + 2.0*(alpha_1+1.0)/(alpha_1 * alpha_1) * ki
+                !rj_p = - 1.0/(2.0*(alpha_1 + 1.0)) * hi + gi / (2.0 * alpha_1*alpha_1) - 2.0 / alpha_1/alpha_1 * ki
+
+
+
+                !!! set 2 equation !!!
+                ! Equation set 2 is not working so far !
+                !pj = -1.0/2.0*alpha_2/(1.0+alpha_2) * hi - 1.0/(1.0+alpha_2)*gi - 4.0/(1.0+alpha_2)*ki
+                !qj = 1.0 + 1.0/2.0*(alpha_2 - 1.0)/alpha_2 * hi + 1.0/alpha_2 * gi + 4.0/alpha_2 * ki
+                !rj = 1.0/2.0/alpha_2/(alpha_2+1.0) * hi - 1.0/alpha_2/(alpha_2+1.0) * gi - 4.0/alpha_2/(alpha_2+1.0)*ki
+
+                !pj_p = 1.0/2.0*alpha_1/(1.0+alpha_1)*hi + 1.0/(1.0+alpha_1)*gi -4.0/(1.0+alpha_1)*ki
+                !qj_p = 1.0 - 1.0/2.0*(alpha_1-1)/alpha_1 * hi - 1.0/alpha_1 * gi + 4.0 / alpha_1 * ki
+                !rj_p = - 1.0/2.0/alpha_1/(1.0+alpha_1)*hi + 1.0/(1.0+alpha_1)*gi - 4.0/alpha_1/(1.0+alpha_1)*ki
+
+
                 sj_p = pj_p * qp(i-1,n-1,j) + qj_p * qp(i-1,n,j) + rj_p * qp_ghost_1 &
-                + mi / 2.0 * (lateralFlow(i-1,n,j) - lateralFlow(i-1,n-1,j) ) &
+                !+ mi / 2.0 * (lateralFlow(i-1,n,j) - lateralFlow(i-1,n-1,j) ) &
                 + ni * lateralFlow(i-1,n,j)
+
+            else
+                ! for any node other than ghost node !
+                pj = - hi / 4.0 - gi / 2.0 - 2.0 * ki
+                qj = 1.0 + gi + 4.0 * ki
+                rj = hi / 4.0 - gi / 2.0 - 2.0 * ki
+
+                pj_p = hi / 4.0 + gi / 2.0 - 2.0 * ki
+                qj_p = 1.0 - gi + 4.0 * ki
+                rj_p = -hi / 4.0 + gi / 2.0 - 2.0 * ki
+
+                sj_p = pj_p * qp(i-1,n-1,j) + qj_p * qp(i-1,n,j) + rj_p * qp(i-1,n+1,j) &
+                    + mi / 2.0 * (lateralFlow(i-1,n+1,j) - lateralFlow(i-1,n-1,j) ) &
+                    + ni * lateralFlow(i-1,n,j)
             end if
 
-            !if (j .eq. 3) then
-            !if (lateralFlow(i-1,n,j) .ne. 0.0) then
-            !    print*, i-1,n,j, lateralFlow(i-1,n,j)
-            !    pause 5000
-            !end if
-            !end if
+            !print*, pj, qj, rj, pj_p, qj_p, rj_p
 
             E_cnt(i,n) = -1.0 * rj / (pj * E_cnt(i,n-1) + qj)
             F_cnt(i,n) = ( sj_p - pj * F_cnt(i,n-1) ) / ( pj * E_cnt(i,n-1) + qj )
 
         end do
 
-        qp_ghost = qp(i-1,ntim,j)+lateralFlow(i-1,ntim,j)*dx(i-1,j)
+        !pause
 
-        !if (j .eq. 3) then
-        !    print*, i-1, qp_ghost
-        !end if
+        qp_ghost = qp(i-1,ntim,j)+lateralFlow(i-1,ntim,j)*dx(i-1,j)
 
         qp_ghost_1 = qp_ghost
 
@@ -139,15 +176,6 @@ subroutine diffusive_CNT(j,ntim,repeatInterval)
     ini_E(1:ncomp,j) = E_cnt(1:ncomp,repeatInterval+1)
     ini_F(1:ncomp,j) = F_cnt(1:ncomp,repeatInterval+1)
     ini_q_repeat(1:ncomp,j) = qp(1:ncomp,repeatInterval+1,j)
-
-    !if (j .eq. 3) then
-    !    do n=1,ntim
-    !        !print*, ini_q_repeat(1:ncomp,j)
-    !        print*, qp(1:ncomp,n,j)
-    !    end do
-
-    !    pause 5000
-    !end if
 
 
     deallocate (E_cnt, F_cnt)
@@ -292,20 +320,21 @@ subroutine mesh_diffusive_backward(j,ntim,repeatInterval)
             if (depthCalOk(i) .eq. 1) then
                 celerity2(i)=5.0 / 3.0 * abs(sfi) ** 0.3 * abs(qp(i,repeatInterval+1,j)) ** &
                     0.4 / bo(i,j) ** 0.4 / (1./(sk(i,j)*q_sk_multi)) ** 0.6
+
                 diffusivity2(i) = abs(qp(i,repeatInterval+1,j)) / 2.0 / bo(i,j) / abs(sfi)
                 vel = qp(i,repeatInterval+1,j)/newArea(i,j)
 
                 velocity(i,j) = vel
 
-                !if (vel .gt. 10.) then
-                !    print*, j, i, qp(i,repeatInterval+1,j), newArea(i,j),newY(i,j)-z(i,j), celerity2(i)
-                !    !pause 1234
-                !end if
+
+
+
+
 
                 ! Applying the upper limit of celerity
-                if (celerity2(i) .gt. 3.0*vel) celerity2(i) = vel*3.0
+                if (celerity2(i) .gt. 3.0*abs(vel) ) celerity2(i) = abs(vel)*3.0
             else
-                if (qp(i,repeatInterval+1,j) .lt. 1) then
+                if (abs(qp(i,repeatInterval+1,j)) .lt. 1) then
                     celerity2(i)=0.5
                 else
                     celerity2(i)=1.0
@@ -459,6 +488,8 @@ subroutine mesh_diffusive_backward(j,ntim,repeatInterval)
                 ! Applying Newton–Raphson method corrected
                 if (wlCalcMethod .eq. 3) then
                 vel = qp(i,repeatInterval+1,j)/newArea(i,j)
+                !print*, j, i, qp(i,repeatInterval+1,j),newArea(i,j), vel; pause 1000
+
                 do while ( abs(toll) .gt. 0.001)
                     iii = iii +1
                     tempY_1 = tempDepthi_1 + z(i-1,j)
@@ -551,7 +582,7 @@ subroutine mesh_diffusive_backward(j,ntim,repeatInterval)
                 ! to avoid sudden jump in water level calculation
                 ! if the WL jumps abruptly, the tempsfi_1 would be very small compared to sfi.
                 ! we are replacing the water level using normal water level
-                if (sfi / tempsfi_1 .gt. 1e5)  newY(i-1,j) = y_norm
+                if (sfi / tempsfi_1 .gt. 1e4)  newY(i-1,j) = y_norm
 
 
 

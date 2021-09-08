@@ -168,13 +168,26 @@ program mesh
 
     !! Tests after new ghost node !!
     open(unit=1,file="D:\Project_Works\JTTI\Moussa_etal\Test_Case\Single_Trapo\input_single_chn.txt",status='unknown')
-    !open(unit=1,file="D:\Project_Works\JTTI\Moussa_etal\Test_Case\compoundTrapoCS\input_Y_chn.txt",status='unknown')
+    open(unit=1,file="D:\Project_Works\JTTI\Moussa_etal\Test_Case\compoundTrapoCS\input_Y_chn.txt",status='unknown')
     !open(unit=1,file="D:\Project_Works\JTTI\Mississippi_NHD\NHD_Data_CNT_method_with_ql\input_file_1_CNT",status='unknown')  ! NHD Mississippi Final
     !open(unit=1,file="D:\Project_Works\JTTI\Goodwin_Creek_Experimental_Watershed\Original_&
     !reachDistribution\input_file_9_CNT_original_ql_distribution.txt",status='unknown')
     !open(unit=1,file="D:\Project_Works\JTTI\Florence_NC\Model\Test_interpolatedSection_2n\&
     !input_file_737_Moussa_etal.txt",status='unknown')
+    !open(unit=1,file="D:\Project_Works\JTTI\Moussa_etal\Test_Case\Single_Trapo\input_single_chn_nonUniDx.txt",status='unknown')
+    !open(unit=1,file="D:\Project_Works\JTTI\Moussa_etal\Test_Case\CNT_DongHa\input_Y_chn.txt",status='unknown')
+    !open(unit=1,file="D:\Project_Works\JTTI\Florence_NC\Model\&
+    !input_file_737_final_nonInterpolatedSections_Moussa",status='unknown')
+    !open(unit=1,file="D:\Project_Works\JTTI\Vermilion_CNT\input_Vermelion_CNT.txt",status='unknown')
 
+    !!! run for paper !!!
+    open(unit=1,file="D:\Project_Works\JTTI\ARBNM\Model\routeLink_model\Geometry_RouteLink_1_2_3_4_5\&
+    input_CNT.txt",status='unknown')    ! modified NHD section run
+    open(unit=1,file="D:\Project_Works\JTTI\Goodwin_Creek_Experimental_Watershed\Devided_reaches\&
+    input_file_added_reaches1982.txt",status='unknown')
+    open(unit=1,file="D:\Project_Works\JTTI\Mississippi_NHD\NHD_Data_CNT_method_with_ql\input_file_1_CNT",status='unknown')  ! NHD Mississippi Final
+    open(unit=1,file="D:\Project_Works\JTTI\Vermilion_CNT\input_Vermelion_CNT.txt",status='unknown')
+    open(unit=1,file="D:\Project_Works\JTTI\Florence_NC\Model\input_file_737_final_nonInterpolatedSections_Moussa",status='unknown')
 
     print*, 'Reading input file'
 
@@ -555,7 +568,6 @@ program mesh
 
     t=t0*60.0     !! from now on, t is in minute
 
-
     ! applying boundary
     ! interpolation of boundaries at the initial time step
     !! Need to define which channel has terminal boundary
@@ -812,6 +824,7 @@ program mesh
 
     do timestep = 1,repeatInterval,saveFrequency
         do j=1,nlinks
+
             write(9,  10) ini_time+real(timestep-1)*dtini/60.,j, (newQ(i,timestep,j), i=1, maxval(nx1))
             write(994,10) ini_time+real(timestep-1)*dtini/60.,j, (added_Q(i,timestep,j), i=1, maxval(nx1))
         end do
