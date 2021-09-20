@@ -189,6 +189,11 @@ program mesh
     open(unit=1,file="D:\Project_Works\JTTI\Vermilion_CNT\input_Vermelion_CNT.txt",status='unknown')
     open(unit=1,file="D:\Project_Works\JTTI\Florence_NC\Model\input_file_737_final_nonInterpolatedSections_Moussa",status='unknown')
 
+    !!! testing of new diffusivity limit as shown in Moussa et.at (1996)
+    open(unit=1,file="D:\Project_Works\JTTI\Moussa_etal\Test_Case\compoundTrapoCS\input_Y_chn.txt",status='unknown')
+    open(unit=1,file="D:\Project_Works\JTTI\Florence_NC\Model\input_file_737_final_nonInterpolatedSections_Moussa",status='unknown')
+
+
     print*, 'Reading input file'
 
     ! read data
@@ -750,6 +755,11 @@ program mesh
 	repeatInterval = int(60.*60./dtini_given)
 
 
+    !!! test of min_X_plus and min_T_plus
+    min_X_plus = 999.
+    min_T_plus = 999.
+
+
     !! calculation loop starts !!
     do kkk = 1,totalTimeSteps-1, repeatInterval
 
@@ -874,7 +884,7 @@ program mesh
     !pause 7
 
 
-    print*, 'Finished timestep', kkk+repeatInterval-1, 'out of ', totalTimeSteps-1
+    print*, 'Finished timestep', kkk+repeatInterval-1, 'out of ', totalTimeSteps-1, 'min_X_plus',min_X_plus,'min_T_plus',min_T_plus
 
     end do ! end kkk loop
 
@@ -893,6 +903,8 @@ program mesh
     call cpu_time( t2 )
 
     print*, t2-t1, 'sec'
+
+    print*, 'min_X_plus',min_X_plus,'min_T_plus',min_T_plus
 
 end program mesh
 

@@ -23,4 +23,6 @@ module var_module
     real :: dxini,lastKnownDiffuDT, skk, minDiffuLm, maxDiffuLm!, tfin ntim
     integer :: applyNaturalSection  ! if 1, then attribute table will be activated, if 0, then rectangular channel will be applied
 
+    real :: min_X_plus, min_T_plus
+
 end module var_module

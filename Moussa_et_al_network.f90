@@ -665,6 +665,17 @@ subroutine mesh_diffusive_backward(j,ntim,repeatInterval)
 			if (diffusivity(i,j) .lt. minDiffuLm) diffusivity(i,j) = minDiffuLm !!! Applying diffusivity lower limit
 		end do
 
+
+
+		!!! test of min_X_plus and min_T_plus
+		do i=1,ncomp-1
+            if (celerity(i,j)/diffusivity(i,j)*dx(i,j) .le. 0.1) diffusivity(1:ncomp,j) = celerity(i,j)/0.1*dx(i,j)
+            if (celerity(i,j)*celerity(i,j)/diffusivity(i,j)*dtini .le. 0.3) &
+                diffusivity(1:ncomp,j) = celerity(i,j)*celerity(i,j)/0.3*dtini
+            min_X_plus = min(min_X_plus,celerity(i,j)/diffusivity(i,j)*dx(i,j))
+            min_T_plus = min(min_T_plus,celerity(i,j)*celerity(i,j)/diffusivity(i,j)*dtini)
+        end do
+
 !!++++++++++++++++++++ Diffusive wave Backward sweep ends +++++++++++++++++++!!
 
 
